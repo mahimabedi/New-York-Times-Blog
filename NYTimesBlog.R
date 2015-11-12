@@ -1,6 +1,6 @@
 # loading the data
 Train = read.csv("NYTimesBlogTrain.csv", stringsAsFactors=FALSE)
-Test = read.csv("NYTimesBlogTest.csv", stringsAsFactors=FALSE
+Test = read.csv("NYTimesBlogTest.csv", stringsAsFactors=FALSE)
 
 str(Train)
 
@@ -34,7 +34,7 @@ levels(Test$Weekday)=levels(Train$Weekday)
 M1=glm(Popular~NewsDesk+SectionName+SubsectionName+Weekday,data=Train,family="binomial")
 summary(M1)
 PredM1 = predict(M1, newdata=Test, type="response")
-
+#AUC=0.56293
 
 # text analytics
 library(tm)
@@ -45,7 +45,7 @@ CorpusH = Corpus(VectorSource(c(Train$Headline,Test$Headline)))
 CorpusH = tm_map(CorpusH, tolower)
 CorpusH = tm_map(CorpusH, PlainTextDocument)
 CorpusH = tm_map(CorpusH, removePunctuation)
-CorpusH = tm_map(CorpusH, removeWords,stopwords("english"))
+CorpusH = tm_map(CorpusH, removeWords,c(stopwords("english"),"will"))
 CorpusH = tm_map(CorpusH, stemDocument)
 
 dtmH = DocumentTermMatrix(CorpusH)
@@ -61,7 +61,7 @@ CorpusA = Corpus(VectorSource(c(Train$Abstract,Test$Abstract)))
 CorpusA = tm_map(CorpusA, tolower)
 CorpusA = tm_map(CorpusA, PlainTextDocument)
 CorpusA = tm_map(CorpusA, removePunctuation)
-CorpusA = tm_map(CorpusA, removeWords,stopwords("english"))
+CorpusA = tm_map(CorpusA, removeWords,c(stopwords("english"),"will"))
 CorpusA = tm_map(CorpusA, stemDocument)
 
 dtmA = DocumentTermMatrix(CorpusA)
@@ -71,6 +71,20 @@ colnames(AbstractWords) = paste0("A", colnames(AbstractWords))
 
 AbstractListTrain = head(AbstractWords, nrow(Train))
 AbstractListTest = tail(AbstractWords, nrow(Test))
+
+# word cloud
+library(wordcloud)
+library(RColorBrewer)
+dtm=c(dtmA, dtmH)
+m<- as.matrix(dtm)
+v<- sort(colSums(m),decreasing=TRUE)
+head(v,40)
+words <- names(v)
+d <- data.frame(word=words, freq=v)
+
+col <- brewer.pal(8,"Dark2")
+wordcloud(d$word,d$freq, scale=c(8,.6),min.freq=5,max.words=150, color=col,random.order=F, rot.per=.15, vfont=c("sans serif","plain"))
+
 
 # creating new train and test dataframe
 TextTrain=cbind(HeadlineListTrain, AbstractListTrain,row.names=NULL)
@@ -93,10 +107,21 @@ TextTest$WordCount<-Test$WordCount
 library(randomForest)
 M2=randomForest(Popular~.,data=TextTrain,nodesize=10,ntree=3500,importance=TRUE)
 PredM2 = predict(M2, newdata=TextTest, type="prob")[,2]
+
 submissionM2= data.frame(UniqueID=Test$UniqueID, Probability1 = PredM2)
 write.csv(submissionM2, "submissionM2.csv", row.names=FALSE)
-
-importance(M2)
 # Test AUC=0.87627
 
+importance(M2)
+summary(importance(M2))
 
+#selecting top quartile words
+MeanDecreaseAccuracy<-as.table(importance(M2)[,3])
+wordsAccuracy<-MeanDecreaseAccuracy[MeanDecreaseAccuracy>12.9942]
+wordsAccuracy
+wordsAccuracy<-as.table(sort(wordsAccuracy[wordsAccuracy<56.82428]))
+
+MeanDecreaseGini<-as.table(importance(M2)[,4])
+wordsGini<-MeanDecreaseGini[MeanDecreaseGini>2.5960]
+wordsGini
+wordsGini<-as.table(sort(wordsGini<41.012834))
