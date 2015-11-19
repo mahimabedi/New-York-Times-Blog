@@ -45,7 +45,7 @@ CorpusH = Corpus(VectorSource(c(Train$Headline,Test$Headline)))
 CorpusH = tm_map(CorpusH, tolower)
 CorpusH = tm_map(CorpusH, PlainTextDocument)
 CorpusH = tm_map(CorpusH, removePunctuation)
-CorpusH = tm_map(CorpusH, removeWords,c(stopwords("english"),"will"))
+CorpusH = tm_map(CorpusH, removeWords,c(stopwords("english"),"will","new","york","times"))
 CorpusH = tm_map(CorpusH, stemDocument)
 
 dtmH = DocumentTermMatrix(CorpusH)
@@ -61,7 +61,7 @@ CorpusA = Corpus(VectorSource(c(Train$Abstract,Test$Abstract)))
 CorpusA = tm_map(CorpusA, tolower)
 CorpusA = tm_map(CorpusA, PlainTextDocument)
 CorpusA = tm_map(CorpusA, removePunctuation)
-CorpusA = tm_map(CorpusA, removeWords,c(stopwords("english"),"will"))
+CorpusA = tm_map(CorpusA, removeWords,c(stopwords("english"),"will","new","york","times"))
 CorpusA = tm_map(CorpusA, stemDocument)
 
 dtmA = DocumentTermMatrix(CorpusA)
@@ -83,7 +83,7 @@ words <- names(v)
 d <- data.frame(word=words, freq=v)
 
 col <- brewer.pal(8,"Dark2")
-wordcloud(d$word,d$freq, scale=c(8,.6),min.freq=5,max.words=150, color=col,random.order=F, rot.per=.15, vfont=c("sans serif","plain"))
+wordcloud(d$word,d$freq, scale=c(6,.5),min.freq=5,max.words=250, color=col,random.order=F, rot.per=.15, vfont=c("sans serif","plain"))
 
 
 # creating new train and test dataframe
